@@ -1,0 +1,49 @@
+:root {
+  --dap-primary: #101827;
+  --dap-dark: #0C1422;
+  --dap-background: #FFFFFF;
+  --dap-section: #F3F5F8;
+  --dap-text: #101827;
+  --dap-secondary: #64748B;
+  --dap-muted: #94A3B8;
+  --dap-border: #E5EAF0;
+  --dap-white: #FFFFFF;
+
+  --dap-font: "Inter", "Helvetica Neue", Arial, sans-serif;
+
+  --dap-container: 1320px;
+  --dap-transition: 0.2s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--dap-font);
+  color: var(--dap-text);
+  background: var(--dap-background);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: #DCE4ED;
+  color: var(--dap-primary);
+}

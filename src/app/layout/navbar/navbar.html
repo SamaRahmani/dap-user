@@ -1,0 +1,86 @@
+<header class="navbar">
+  <div class="nav-container">
+
+    <!-- Brand -->
+    <a routerLink="/" class="brand" (click)="closeMenu()">
+      <span class="brand-icon">D</span>
+      <span class="brand-name">DRIVE AWAY PRICE</span>
+      <span class="brand-divider"></span>
+      <span class="brand-subtitle">DAP</span>
+    </a>
+
+    <!-- Mobile Menu Toggle -->
+    <button
+      class="menu-toggle"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="menuOpen()"
+      aria-label="Toggle navigation">
+      {{ menuOpen() ? '✕' : '☰' }}
+    </button>
+
+    <!-- Navigation Links -->
+    <nav class="nav-links" [class.open]="menuOpen()">
+
+      <a routerLink="/" (click)="closeMenu()">Home</a>
+
+      @if (authService.isAuthenticated()) {
+        <a routerLink="/calculator" (click)="closeMenu()">
+          Calculator
+        </a>
+      } @else {
+        <a href="/#how-it-works" (click)="closeMenu()">
+          How It Works
+        </a>
+
+        <a href="/#features" (click)="closeMenu()">
+          Features
+        </a>
+
+        <a href="/#about" (click)="closeMenu()">
+          About
+        </a>
+      }
+
+    </nav>
+
+    <!-- Navigation Actions -->
+    <div class="nav-actions" [class.open]="menuOpen()">
+
+      @if (authService.isAuthenticated()) {
+
+        <button
+          type="button"
+          class="logout-button"
+          (click)="logout()">
+          Logout
+        </button>
+
+      } @else {
+
+        <a
+          routerLink="/login"
+          class="login-link"
+          (click)="closeMenu()">
+          Login
+        </a>
+
+        <a
+          routerLink="/signup"
+          class="signup-button"
+          (click)="closeMenu()">
+          Get Started
+        </a>
+
+      }
+
+      <a
+        [href]="adminPortalUrl"
+        class="admin-link"
+        (click)="closeMenu()">
+        Admin Portal ↗
+      </a>
+
+    </div>
+
+  </div>
+</header>

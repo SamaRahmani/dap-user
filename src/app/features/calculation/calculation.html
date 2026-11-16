@@ -1,0 +1,757 @@
+
+<main class="calculator-page">
+  <section class="calculator-container">
+
+    <!-- Page heading -->
+    <div class="page-heading">
+      <a routerLink="/calculator" class="back-link">
+        <span>←</span> Back to calculator
+      </a>
+
+      <div class="eyebrow">DRIVE AWAY PRICE</div>
+
+      <h1>
+        {{ step === 'details' ? 'Configure your vehicle' : (calculationResult ? 'Your DAP report' : 'Review your details') }}
+      </h1>
+
+      <p>
+        {{
+          step === 'details'
+            ? 'Provide the vehicle and registration information to proceed.'
+            : calculationResult
+              ? 'Your vehicle price and complete drive away price breakdown.'
+              : 'Please verify the information before continuing.'
+        }}
+      </p>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-wrapper">
+      <div class="progress-step active">
+        <span class="step-number">1</span>
+        <span>Vehicle & configuration</span>
+      </div>
+
+      <div class="progress-line" [class.completed]="step === 'review'"></div>
+
+      <div class="progress-step" [class.active]="step === 'review'">
+        <span class="step-number">2</span>
+        <span>Review</span>
+      </div>
+    </div>
+
+    @if (step === 'details') {
+
+      <!-- Vehicle information -->
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">01</span>
+            <h2>Vehicle information</h2>
+            <p>
+              {{
+                mode === 'vehicle'
+                  ? 'Select a vehicle from the available database.'
+                  : 'Enter the ex-showroom price of your vehicle.'
+              }}
+            </p>
+          </div>
+
+          <span class="method-label">
+            {{ mode === 'vehicle' ? 'DATABASE VEHICLE' : 'MANUAL ENTRY' }}
+          </span>
+        </div>
+
+        @if (mode === 'vehicle') {
+          <div class="field-group">
+            <label for="vehicle">Select vehicle <span>*</span></label>
+
+            <select
+              id="vehicle"
+              name="vehicle"
+              [(ngModel)]="vehicleId"
+              [disabled]="loadingVehicles || !!vehicleError">
+
+              <option value="" disabled>Select a vehicle</option>
+
+              @for (vehicle of vehicles; track vehicle.vehicleId) {
+                <option [value]="vehicle.vehicleId">
+                  {{ vehicle.modelName }} - {{ vehicle.variantName }}
+                </option>
+              }
+            </select>
+
+            @if (loadingVehicles) {
+              <small class="field-hint">
+                Loading vehicles from the database...
+              </small>
+            }
+
+            @if (vehicleError) {
+              <small class="field-hint error-message">
+                {{ vehicleError }}
+              </small>
+
+              <button
+                type="button"
+                class="text-button"
+                (click)="loadVehicles()">
+                Try again
+              </button>
+            }
+
+            @if (!loadingVehicles && !vehicleError && vehicles.length === 0) {
+              <small class="field-hint">
+                No vehicles are currently available.
+              </small>
+            }
+          </div>
+
+          @if (selectedVehicle) {
+            <div class="vehicle-details">
+              <div class="detail-item">
+                <span>Model</span>
+                <strong>{{ selectedVehicle.modelName }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>Variant</span>
+                <strong>{{ selectedVehicle.variantName }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>Fuel type</span>
+                <strong>{{ selectedVehicle.fuelType }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>Transmission</span>
+                <strong>{{ selectedVehicle.transmissionType }}</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>Length</span>
+                <strong>{{ selectedVehicle.lengthMm }} mm</strong>
+              </div>
+
+              <div class="detail-item">
+                <span>Ground clearance</span>
+                <strong>{{ selectedVehicle.groundClearanceMm }} mm</strong>
+              </div>
+
+              <div class="detail-item price-detail">
+                <span>Ex-showroom price</span>
+                <strong>
+                  {{ selectedVehicle.exShowroomPrice | currency:'INR':'symbol':'1.0-0' }}
+                </strong>
+              </div>
+            </div>
+          }
+        } @else {
+          <div class="field-group">
+            <label for="price">Ex-showroom price <span>*</span></label>
+
+            <div class="price-input">
+              <span>₹</span>
+              <input
+                id="price"
+                name="price"
+                type="number"
+                min="1"
+                step="0.01"
+                placeholder="Enter ex-showroom price"
+                [(ngModel)]="exShowroomPrice"
+              />
+            </div>
+
+            <small class="field-hint">
+              Enter the ex-showroom price in Indian Rupees.
+            </small>
+          </div>
+        }
+      </section>
+
+      <!-- Registration location -->
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">02</span>
+            <h2>Registration location</h2>
+            <p>Select the state, city and RTO where the vehicle will be registered.</p>
+          </div>
+        </div>
+
+        <!-- State -->
+        <div class="field-group">
+          <label for="state">State <span>*</span></label>
+
+          <select
+            id="state"
+            name="state"
+            [ngModel]="stateCode"
+            (ngModelChange)="onStateChange($event)"
+            [disabled]="loadingStates || !!stateError">
+
+            <option value="" disabled>Select state</option>
+
+            @for (state of states; track state.stateCode) {
+              <option [value]="state.stateCode">
+                {{ state.stateName }}
+              </option>
+            }
+          </select>
+
+          @if (loadingStates) {
+            <small class="field-hint">Loading states...</small>
+          }
+
+          @if (stateError) {
+            <small class="field-hint error-message">
+              {{ stateError }}
+            </small>
+
+            <button
+              type="button"
+              class="text-button"
+              (click)="loadStates()">
+              Try again
+            </button>
+          }
+
+          @if (!loadingStates && !stateError && states.length === 0) {
+            <small class="field-hint">No states available.</small>
+          }
+        </div>
+
+        <!-- City -->
+        <div class="field-group">
+          <label for="city">City <span>*</span></label>
+
+          <select
+            id="city"
+            name="city"
+            [ngModel]="cityId"
+            (ngModelChange)="onCityChange($event === null ? null : +$event)"
+            [disabled]="!stateCode || loadingCities || !!cityError">
+
+            <option [ngValue]="null" disabled>Select city</option>
+
+            @for (city of cities; track city.cityId) {
+              <option [ngValue]="city.cityId">
+                {{ city.cityName }}
+              </option>
+            }
+          </select>
+
+          @if (loadingCities) {
+            <small class="field-hint">Loading cities...</small>
+          }
+
+          @if (cityError) {
+            <small class="field-hint error-message">
+              {{ cityError }}
+            </small>
+
+            <button
+              type="button"
+              class="text-button"
+              (click)="loadCities(stateCode)">
+              Try again
+            </button>
+          }
+
+          @if (stateCode && !loadingCities && !cityError && cities.length === 0) {
+            <small class="field-hint">
+              No cities available for this state.
+            </small>
+          }
+        </div>
+
+        <!-- RTO -->
+        <div class="field-group">
+          <label for="rto">RTO <span>*</span></label>
+
+          <select
+            id="rto"
+            name="rto"
+            [(ngModel)]="rtoCode"
+            [disabled]="cityId === null || loadingRtos || !!rtoError">
+
+            <option value="" disabled>Select RTO</option>
+
+            @for (rto of rtos; track rto.rtoCode) {
+              <option [value]="rto.rtoCode">
+                {{ rto.rtoName }} ({{ rto.rtoCode }})
+              </option>
+            }
+          </select>
+
+          @if (loadingRtos) {
+            <small class="field-hint">Loading RTOs...</small>
+          }
+
+          @if (rtoError) {
+            <small class="field-hint error-message">
+              {{ rtoError }}
+            </small>
+
+            <button
+              type="button"
+              class="text-button"
+              (click)="cityId !== null && loadRtos(cityId)">
+              Try again
+            </button>
+          }
+
+          @if (cityId !== null && !loadingRtos && !rtoError && rtos.length === 0) {
+            <small class="field-hint">
+              No RTOs available for this city.
+            </small>
+          }
+        </div>
+
+        @if (selectedRto) {
+          <div class="location-summary">
+            <div>
+              <span>State</span>
+              <strong>{{ selectedState?.stateName }}</strong>
+            </div>
+
+            <div>
+              <span>City</span>
+              <strong>{{ selectedCity?.cityName }}</strong>
+            </div>
+
+            <div>
+              <span>RTO Code</span>
+              <strong>{{ selectedRto.rtoCode }}</strong>
+            </div>
+          </div>
+        }
+      </section>
+
+      <!-- Insurance -->
+      <section class="form-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-number">03</span>
+            <h2>Insurance provider</h2>
+            <p>Select your preferred insurance provider.</p>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="insurance">Insurance provider <span>*</span></label>
+
+          <select
+            id="insurance"
+            name="insurance"
+            [(ngModel)]="insuranceId"
+            [disabled]="loadingInsurance || !!insuranceError">
+
+            <option value="" disabled>Select insurance provider</option>
+
+            @for (provider of insuranceProviders; track provider.insuranceId) {
+              <option [value]="provider.insuranceId">
+                {{ provider.providerName }} ({{ provider.percentage }}%)
+              </option>
+            }
+          </select>
+
+          @if (loadingInsurance) {
+            <small class="field-hint">
+              Loading insurance providers...
+            </small>
+          }
+
+          @if (insuranceError) {
+            <small class="field-hint error-message">
+              {{ insuranceError }}
+            </small>
+
+            <button
+              type="button"
+              class="text-button"
+              (click)="loadInsuranceProviders()">
+              Try again
+            </button>
+          }
+
+          @if (!loadingInsurance && !insuranceError && insuranceProviders.length === 0) {
+            <small class="field-hint">
+              No insurance providers available.
+            </small>
+          }
+        </div>
+      </section>
+
+      <!-- Details actions -->
+      <div class="form-actions">
+        <a routerLink="/calculator" class="secondary-button">
+          Cancel
+        </a>
+
+        <button
+          type="button"
+          class="primary-button"
+          [disabled]="!isFormValid"
+          (click)="continueToReview()">
+          Review details <span>→</span>
+        </button>
+      </div>
+
+    } @else {
+
+      <!-- Before calculation: review details -->
+      @if (!calculationResult) {
+
+        <!-- Review: Vehicle -->
+        <section class="form-section review-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">01</span>
+              <h2>Vehicle information</h2>
+            </div>
+
+            <button
+              class="text-button"
+              type="button"
+              (click)="editDetails()">
+              Edit
+            </button>
+          </div>
+
+          @if (mode === 'vehicle') {
+            <div class="review-row">
+              <span>Vehicle</span>
+              <strong>
+                {{ selectedVehicle?.modelName }} - {{ selectedVehicle?.variantName }}
+              </strong>
+            </div>
+
+            <div class="review-row">
+              <span>Fuel type</span>
+              <strong>{{ selectedVehicle?.fuelType }}</strong>
+            </div>
+
+            <div class="review-row">
+              <span>Transmission</span>
+              <strong>{{ selectedVehicle?.transmissionType }}</strong>
+            </div>
+
+            <div class="review-row">
+              <span>Length</span>
+              <strong>{{ selectedVehicle?.lengthMm }} mm</strong>
+            </div>
+
+            <div class="review-row">
+              <span>Ground clearance</span>
+              <strong>{{ selectedVehicle?.groundClearanceMm }} mm</strong>
+            </div>
+          } @else {
+            <div class="review-row">
+              <span>Entry method</span>
+              <strong>Manual entry</strong>
+            </div>
+          }
+
+          <div class="review-row highlight-row">
+            <span>Ex-showroom price</span>
+            <strong>
+              {{ displayedPrice | currency:'INR':'symbol':'1.0-0' }}
+            </strong>
+          </div>
+        </section>
+
+        <!-- Review: Location -->
+        <section class="form-section review-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">02</span>
+              <h2>Registration location</h2>
+            </div>
+
+            <button
+              class="text-button"
+              type="button"
+              (click)="editDetails()">
+              Edit
+            </button>
+          </div>
+
+          <div class="review-row">
+            <span>State</span>
+            <strong>{{ selectedState?.stateName }}</strong>
+          </div>
+
+          <div class="review-row">
+            <span>City</span>
+            <strong>{{ selectedCity?.cityName }}</strong>
+          </div>
+
+          <div class="review-row">
+            <span>RTO</span>
+            <strong>
+              {{ selectedRto?.rtoName }} ({{ selectedRto?.rtoCode }})
+            </strong>
+          </div>
+        </section>
+
+        <!-- Review: Insurance -->
+        <section class="form-section review-section">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2>Insurance</h2>
+            </div>
+
+            <button
+              class="text-button"
+              type="button"
+              (click)="editDetails()">
+              Edit
+            </button>
+          </div>
+
+          <div class="review-row">
+            <span>Provider</span>
+            <strong>{{ selectedInsurance?.providerName }}</strong>
+          </div>
+
+          <div class="review-row">
+            <span>Percentage</span>
+            <strong>{{ selectedInsurance?.percentage }}%</strong>
+          </div>
+        </section>
+      }
+
+      <!-- Calculation error -->
+      @if (calculationError) {
+        <div class="notice error-message" role="alert">
+          <span class="notice-icon">!</span>
+          <p>{{ calculationError }}</p>
+        </div>
+      }
+
+      <!-- Complete DAP report -->
+      @if (calculationResult) {
+        <section class="dap-report">
+
+          <div class="dap-report-content">
+
+            <!-- Report heading -->
+            <div class="dap-brand">DRIVE AWAY PRICE</div>
+
+            <h2>Your complete price</h2>
+
+            <p class="dap-subtitle">
+              Complete vehicle and on-road price summary
+            </p>
+
+            <div class="dap-separator"></div>
+
+            <!-- Vehicle details -->
+            <div class="dap-section">
+              <div class="dap-section-heading">VEHICLE DETAILS</div>
+
+              <div class="dap-detail-row">
+                <span>Model</span>
+                <strong>
+                  {{ calculationResult.modelName || 'Manual price entry' }}
+                </strong>
+              </div>
+
+              @if (calculationResult.variantName) {
+                <div class="dap-detail-row">
+                  <span>Variant</span>
+                  <strong>{{ calculationResult.variantName }}</strong>
+                </div>
+              }
+
+              @if (mode === 'vehicle' && selectedVehicle) {
+                <div class="dap-detail-row">
+                  <span>Fuel type</span>
+                  <strong>{{ selectedVehicle.fuelType }}</strong>
+                </div>
+
+                <div class="dap-detail-row">
+                  <span>Transmission</span>
+                  <strong>{{ selectedVehicle.transmissionType }}</strong>
+                </div>
+
+                <div class="dap-detail-row">
+                  <span>Length</span>
+                  <strong>{{ selectedVehicle.lengthMm }} mm</strong>
+                </div>
+
+                <div class="dap-detail-row">
+                  <span>Ground clearance</span>
+                  <strong>{{ selectedVehicle.groundClearanceMm }} mm</strong>
+                </div>
+              }
+
+              <div class="dap-detail-row">
+                <span>Registration state</span>
+                <strong>{{ calculationResult.stateName }}</strong>
+              </div>
+
+              <div class="dap-detail-row">
+                <span>Registration city</span>
+                <strong>{{ calculationResult.cityName }}</strong>
+              </div>
+
+              <div class="dap-detail-row">
+                <span>RTO code</span>
+                <strong>{{ calculationResult.rtoCode }}</strong>
+              </div>
+            </div>
+
+            <div class="dap-separator"></div>
+
+            <!-- Vehicle price -->
+            <div class="dap-section">
+              <div class="dap-section-heading">VEHICLE PRICE</div>
+
+              <div class="dap-price-row">
+                <span>Ex-showroom price</span>
+                <strong>
+                  {{ calculationResult.exShowroomPrice | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="dap-separator"></div>
+
+            <!-- Insurance breakdown -->
+            <div class="dap-section">
+              <div class="dap-section-heading">INSURANCE DETAILS</div>
+
+              <div class="dap-price-row">
+                <span>Insurance provider</span>
+                <strong>{{ calculationResult.insuranceProvider }}</strong>
+              </div>
+
+              <div class="dap-price-row">
+                <span>Insurance percentage</span>
+                <strong>{{ calculationResult.insurancePercentage }}%</strong>
+              </div>
+
+              <div class="dap-price-row dap-subtotal">
+                <span>Insurance premium</span>
+                <strong>
+                  {{ calculationResult.insurancePremium | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="dap-separator"></div>
+
+            <!-- Registration breakdown -->
+            <div class="dap-section">
+              <div class="dap-section-heading">REGISTRATION CHARGES</div>
+
+              <div class="dap-price-row">
+                <span>National charges</span>
+                <strong>
+                  {{ calculationResult.nationalCharges | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+
+              <div class="dap-price-row">
+                <span>State charges</span>
+                <strong>
+                  {{ calculationResult.stateCharges | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+
+              <div class="dap-price-row">
+                <span>City charges</span>
+                <strong>
+                  {{ calculationResult.cityCharges | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+
+              <div class="dap-price-row dap-subtotal">
+                <span>Total registration charges</span>
+                <strong>
+                  {{ calculationResult.registrationCharges | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+            </div>
+
+            <!-- Final DAP -->
+            <div class="dap-final-card">
+              <div class="dap-final-label">TOTAL DRIVE AWAY PRICE</div>
+
+              <div class="dap-final-amount">
+                <span>DAP</span>
+                <strong>
+                  {{ calculationResult.totalDriveAwayPrice | currency:'INR':'symbol':'1.2-2' }}
+                </strong>
+              </div>
+
+              <div class="dap-amount-words">
+                <span>Amount in words</span>
+                <strong>
+                  {{ getDapAmountInWords(calculationResult.totalDriveAwayPrice) }}
+                </strong>
+              </div>
+            </div>
+
+            <p class="dap-footer">
+              A transparent breakdown of your vehicle's Drive Away Price.
+            </p>
+
+          </div>
+        </section>
+      }
+
+      <!-- Review and calculation actions -->
+      <div class="form-actions">
+
+        @if (calculationResult) {
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="editDetails()">
+            Edit details
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            (click)="calculateDap()"
+            [disabled]="isCalculating">
+            @if (isCalculating) {
+              Recalculating...
+            } @else {
+              Recalculate DAP
+            }
+          </button>
+        } @else {
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="editDetails()"
+            [disabled]="isCalculating">
+            Back to edit
+          </button>
+
+          <button
+            type="button"
+            class="primary-button"
+            (click)="calculateDap()"
+            [disabled]="isCalculating || !isFormValid">
+            @if (isCalculating) {
+              Calculating...
+            } @else {
+              Calculate DAP <span>→</span>
+            }
+          </button>
+        }
+
+      </div>
+    }
+
+  </section>
+</main>
